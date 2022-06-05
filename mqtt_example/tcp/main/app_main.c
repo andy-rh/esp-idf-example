@@ -48,25 +48,25 @@ static const char *TAG = "MQTT_EXAMPLE";
 // 上报Light状态的Topic
 #define LIGHT_STATUS_TOPIC "/ha8sOqHhFeN/device1/user/light_status"
 
-// #define   GET_MESSAGE_TOPIC     "/ha8sOqHhFeN/device1/user/get"
-// #define   SEND_MESSAGE_TOPIC    "/ha8sOqHhFeN/device1/user/update"
+#define   GET_MESSAGE_TOPIC     "/ha8sOqHhFeN/device1/user/get"
+#define   SEND_MESSAGE_TOPIC    "/ha8sOqHhFeN/device1/user/update"
 
 // 初始化mqtt的客户端
 esp_mqtt_client_handle_t client;
 
 // 控制LED的 GPIO
 gpio_num_t gpio_led_num22 = GPIO_NUM_22; // 连接LED的GPIO
-// gpio_num_t gpio_led_num21 = GPIO_NUM_21; //控制按键的GPIO
+gpio_num_t gpio_led_num21 = GPIO_NUM_21; //控制按键的GPIO
 
-// char mqtt_publish_data3[] = "mqtt i am esp32";
+char mqtt_publish_data3[] = "mqtt i am esp32";
 
 //gpio init
 void gpio_init()
 {
     gpio_pad_select_gpio(gpio_led_num22);
     gpio_set_direction(gpio_led_num22, GPIO_MODE_OUTPUT);//输出
-    // gpio_pad_select_gpio(gpio_led_num21);
-    // gpio_set_direction(gpio_led_num21, GPIO_MODE_INPUT);//输入
+    gpio_pad_select_gpio(gpio_led_num21);
+    gpio_set_direction(gpio_led_num21, GPIO_MODE_INPUT);//输入
 }
 
 /**
@@ -135,7 +135,7 @@ static esp_err_t parse_json_data(char *buffer)
                 // 上报当前灯的状态
                 msg_id = esp_mqtt_client_publish(client, LIGHT_STATUS_TOPIC, "{\"lightStatus\": \"on\"}", 0, 0, 0);
                 ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-                // esp_mqtt_client_publish(client, SEND_MESSAGE_TOPIC, mqtt_publish_data3, strlen(mqtt_publish_data3), 1, 0);
+                esp_mqtt_client_publish(client, SEND_MESSAGE_TOPIC, mqtt_publish_data3, strlen(mqtt_publish_data3), 1, 0);
                 break;
             }
             else if (0 == strncmp(value_str, "off", sizeof("off")))
@@ -146,7 +146,7 @@ static esp_err_t parse_json_data(char *buffer)
                 // 上传当前灯的状态
                 msg_id = esp_mqtt_client_publish(client, LIGHT_STATUS_TOPIC, "{\"lightStatus\": \"off\"}", 0, 0, 0);
                 ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-                // esp_mqtt_client_publish(client, SEND_MESSAGE_TOPIC, mqtt_publish_data3, strlen(mqtt_publish_data3), 1, 0);
+                esp_mqtt_client_publish(client, SEND_MESSAGE_TOPIC, mqtt_publish_data3, strlen(mqtt_publish_data3), 1, 0);
                 break;
             }
             else
@@ -181,11 +181,13 @@ static esp_err_t topic_router_handler(esp_mqtt_event_handle_t event)
         // 解析JSON格式数据
         parse_json_data(dest);
     }
-    // else if (0 == strncmp(event->topic, GET_MESSAGE_TOPIC, event->topic_len))
-    // {
-    //     ESP_LOGI(TAG, "deal with topic :%s", event->topic);
-    //     ESP_LOGI(TAG, "data :%s", event->data);
-    // }
+    else if (0 == strncmp(event->topic, GET_MESSAGE_TOPIC, event->topic_len))
+    {
+        ESP_LOGI(TAG, "deal with topic :%s", event->topic);
+        char dest[512] = ""; // event事件未初始化，使用ESP_LOGI()打印的内容部分会出现乱码
+        memcpy(dest, event->data, event->data_len);
+        ESP_LOGI(TAG, "DATA=%s", dest);
+    }
     else
     {
         ESP_LOGE(TAG, "Topics %s that do not need to be processed", topic);
@@ -212,8 +214,8 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         case MQTT_EVENT_CONNECTED: // MQTT 客户端连接上服务器事件
             msg_id = esp_mqtt_client_subscribe(client, LIGHT_CONTROL_TOPIC, 1);
             ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-            // msg_id = esp_mqtt_client_subscribe(client, GET_MESSAGE_TOPIC, 1);//订阅get事件
-            // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+            msg_id = esp_mqtt_client_subscribe(client, GET_MESSAGE_TOPIC, 1);//订阅get事件,不然物联网平台发布不了消息
+            ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
             break;
         case MQTT_EVENT_DISCONNECTED: // MQTT 客户端断开连接事件
             ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");

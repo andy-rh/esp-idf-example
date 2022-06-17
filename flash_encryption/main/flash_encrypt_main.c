@@ -39,13 +39,17 @@ void app_main(void)
     example_print_chip_info();
     example_print_flash_encryption_status();
     example_read_write_flash();
+    printf("test\n");
     /* Initialize the default NVS partition */
     esp_err_t ret = nvs_flash_init();
+    printf("ret1 = %#x.\n",ret);
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
+        printf("ret2 = %#x.",ret);
     }
     ESP_ERROR_CHECK(ret);
+    printf("ret3 = %#x.\n",ret);
 }
 
 
